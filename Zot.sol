@@ -13,7 +13,7 @@ contract Zot {
     string public zot_name;
     string public zot_symbol;
     uint total_supply;
-    string[] user_types = ["admin", "student", "club"];
+    string[] user_types = ["admin", "student", "club", "member"];
 
     // basic events that can be invoked
     event transfer(address _from, address _to, uint transfer_value);
