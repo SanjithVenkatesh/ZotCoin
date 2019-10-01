@@ -13,34 +13,60 @@ contract Zot {
     string public zot_name;
     string public zot_symbol;
     uint total_supply;
+    string[] user_types = ["admin", "student", "club"];
 
     // basic events that can be invoked
     event transfer(address _from, address _to, uint transfer_value);
     event approval(address _owner, address _spender, uint transfer_value);
+    event new_club_created(address _owner, string club_name, string club_symbol);
 
     // necessary mappings to keep track of zot amounts and owed amounts
     mapping (address => uint) public balances;
     mapping (address => mapping(address => uint)) public owed_zots;
+    mapping (string => string) public symbol_to_name;
+    mapping (address => address[]) public club_members;
+    mapping (address => address) public club_owners;
+    mapping (address => string) public user_type;
+    mapping (address => address) public club_wallet;
 
+    // constructor deals with the creation of the smart contract
+    // TODO: make it so only an user with type school can access it
     constructor(string memory _name, string memory _symbol, uint _initial_supply) public {
         zot_name = _name;
         zot_symbol = _symbol;
         total_supply = _initial_supply;
         balances[msg.sender] = _initial_supply;
+        user_type[msg.sender] = "admin";
     }
 
+    // returns the number of zots an address holds
     function balance_of(address _owner) public view returns (uint balance) {
         return balances[_owner];
     }
 
+    // returns the number of zots that a particular owner owes to another address
     function owes_zots(address _from, address _to) public view returns (uint balance) {
         return owed_zots[_from][_to];
     }
 
+    // send a number of zots from one address to another
     function send_zots(address _from, address _to, uint num_zots) public payable  {
         require(balances[_from] >= num_zots, "Not enough Zots to activate transfer");
         balances[_from] -= num_zots;
         balances[_to] += num_zots;
         emit approval(_to, _from, num_zots);
+    }
+
+    function set_new_club(address _new_club, address _owner, address _club_account) public payable {
+        require(keccak256(abi.encodePacked(user_type[_owner])) == keccak256("student"), "type of address not permited to create new club");
+        club_owners[_new_club] = _owner;
+        club_members[_new_club] = [_owner];
+        club_wallet[_new_club] = _club_account;
+        balances[_club_account] = 0;
+    }
+
+    function register_new_member(address _new_member, address _club_to_join) public payable{
+        require(keccak256(abi.encode(user_type[_new_member])) == keccak256("member"), "Invalid member to join");
+        club_members[_club_to_join].push(_new_member);
     }
 }
